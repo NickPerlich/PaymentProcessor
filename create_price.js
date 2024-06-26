@@ -12,7 +12,13 @@ stripe.products.create({
         },
         product: product.id,
     }).then(price => {
-        console.log('Success! Here is your starter subscription product id: ' + product.id);
-        console.log('Success! Here is your starter subscription price id: ' + price.id);
+        stripe.paymentLinks.create({
+            line_items: [
+                {
+                    price: price.id,
+                    quantity: 1,
+                },
+            ],
+        });
     });
 });
