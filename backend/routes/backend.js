@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
 
     for (const item of req.body.items) {
         try {
-            const line_item = await create(item);
+            const line_item = await createLineItem(item);
             line_items.push(line_item);
         } catch (error) {
             errors.push(`Error processing ${item.name}: ${error.message}`);
@@ -47,7 +47,14 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ errors });
     }
 
-    res.status(200).json({ order: line_items });
+    try {
+        const link = await stripe.paymentLinks.create({
+            line_items: line_items,
+        });
+        res.status(200).json({ payment_link: link.url });
+    } catch (error) {
+        res.status(500).json({ errors: ['Error producing payment link'] });
+    }
 });
 
 module.exports = router;
