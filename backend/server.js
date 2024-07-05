@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use('/webhook', express.raw({ type: 'application/json' }));
+
 // Middleware
 app.use(express.json());
 

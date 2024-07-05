@@ -1,7 +1,8 @@
 const express = require('express');
-const { describe } = require('node:test');
+const bodyParser = require('body-parser');
 const stripe = require('stripe')('sk_test_51PBGsUEX9Z1mjrezkop13TlvcbWCL0jqQPuSTv3MOdrPjg0c5lSnas6bOtpwaEpyAr6UrOVfsRgHuREIXtIp3Asl000mjDfXta');
 const router = express.Router();
+const endpointSecret = 'whsec_559f843a6f0be943e227feb3a22c37a7c6af049c66aced495cf310f07da38b42';
 
 router.get('/', (req, res) => {
     res.send('Hello, World!');
@@ -56,5 +57,41 @@ router.post('/', async (req, res) => {
         res.status(500).json({ errors: ['Error producing payment link'] });
     }
 });
+
+const fulfillOrder = (lineItems) => {
+    // TODO: fill me in
+    console.log("Fulfilling order", lineItems);
+  }
+
+router.post('/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+    const payload = req.body;
+    const sig = req.headers['stripe-signature'];
+
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
+    } catch (error) {
+        return res.status(400).send(`Webhook Error: ${error.message}`);
+    }
+
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+        // Retrieve the session. If you require line items in the response, you may include them by expanding line_items.
+        const sessionWithLineItems = await stripe.checkout.sessions.retrieve(
+        event.data.object.id,
+        {
+            expand: ['line_items'],
+        }
+        );
+        const lineItems = sessionWithLineItems.line_items;
+
+        // Fulfill the purchase...
+        fulfillOrder(lineItems);
+    }
+
+    res.status(200).end();
+});
+
 
 module.exports = router;
