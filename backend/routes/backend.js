@@ -1,6 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const stripe = require('stripe')('sk_test_51PBGsUEX9Z1mjrezkop13TlvcbWCL0jqQPuSTv3MOdrPjg0c5lSnas6bOtpwaEpyAr6UrOVfsRgHuREIXtIp3Asl000mjDfXta');
+const stripe = require("stripe")(
+    // This is your test secret API key.
+    'sk_test_51PBGsUEX9Z1mjrezkop13TlvcbWCL0jqQPuSTv3MOdrPjg0c5lSnas6bOtpwaEpyAr6UrOVfsRgHuREIXtIp3Asl000mjDfXta',
+);
 const router = express.Router();
 const endpointSecret = 'whsec_559f843a6f0be943e227feb3a22c37a7c6af049c66aced495cf310f07da38b42';
 
@@ -93,5 +96,43 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), async (req
     res.status(200).end();
 });
 
+router.post("/account", async (req, res) => {
+    try {
+      const account = await stripe.accounts.create({});
+  
+      res.json({
+        account: account.id,
+      });
+    } catch (error) {
+      console.error(
+        "An error occurred when calling the Stripe API to create an account",
+        error
+      );
+      res.status(500);
+      res.send({ error: error.message });
+    }
+});
+
+router.post("/account_link", async (req, res) => {
+    try {
+      const { account } = req.body;
+  
+      const accountLink = await stripe.accountLinks.create({
+        account: account,
+        return_url: 'https://www.gleeda.net/',
+        refresh_url: 'http://localhost:3000/account_link',
+        type: "account_onboarding",
+      });
+  
+      res.json(accountLink);
+    } catch (error) {
+      console.error(
+        "An error occurred when calling the Stripe API to create an account link:",
+        error
+      );
+      res.status(500);
+      res.send({ error: error.message });
+    }
+});
 
 module.exports = router;
